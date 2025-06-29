@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>The Keeper’s Final Sentence</title>
+  <style>
+    body {
+      background-color: #0a0f2c;
+      color: #f0e6d2;
+      font-family: 'Georgia', serif;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      font-size: 2.2em;
+      margin-bottom: 20px;
+    }
+    .intro {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+    }
+    .word-bank {
+      margin-bottom: 40px;
+    }
+    .draggable {
+      display: inline-block;
+      background: #1c1f40;
+      border: 1px solid #888;
+      border-radius: 8px;
+      padding: 10px 15px;
+      margin: 8px;
+      cursor: grab;
+      box-shadow: 0 0 10px #555;
+      user-select: none;
+      touch-action: none; /* prevent default scrolling on touch drag */
+    }
+    .drop-zone {
+      display: inline-block;
+      background: #333;
+      border: 2px dashed #888;
+      border-radius: 5px;
+      width: 110px;
+      height: 40px;
+      vertical-align: top;
+      margin: 5px;
+      position: relative;
+      line-height: 40px;
+      font-weight: bold;
+      color: #ccc;
+      user-select: none;
+    }
+    .checkmark {
+      position: absolute;
+      bottom: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.2em;
+      color: #b8f55c;
+      pointer-events: none;
+    }
+    #successMessage {
+      margin-top: 30px;
+      font-size: 1.4em;
+      color: #b8f55c;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔮 The Keeper’s Final Sentence 🔮</h1>
+  <div class="intro">
+    Seekers, arrange these sacred words in the correct order.<br/>
+    Drag each word into its rightful place.<br/>
+    Each correct choice is marked by the Keepers.
+  </div>
+
+  <div class="word-bank" id="wordBank"></div>
+
+  <div id="dropZones"></div>
+
+  <div id="successMessage">
+    ✨ Well done Seekers! Your next clue lies where knowledge rests,<br/>
+    pages whisper secrets in silence. Seek the bookshelf! 📚
+  </div>
+
+  <script>
+    const correctSentence = [
+      "Well", "done", "seekers,", "your", "next", "clue", "lies", "where", "knowledge", "rests,", "pages", "whisper", "secrets", "in", "silence."
+    ];
+
+    // Shuffle words for bank
+    const shuffled = [...correctSentence].sort(() => Math.random() - 0.5);
+
+    const wordBank = document.getElementById("wordBank");
+    const dropZones = document.getElementById("dropZones");
+    const successMessage = document.getElementById("successMessage");
+
+    let draggedWord = null;
+
+    // --- Touch drag variables ---
+    let touchDragging = false;
+    let touchClone = null;
+    let touchOffsetX = 0;
+    let touchOffsetY = 0;
+
+    // Create draggable words
+    shuffled.forEach(word => {
+      const span = document.createElement("span");
+      span.className = "draggable";
+      span.draggable = true;
+      span.textContent = word;
+
+      // Desktop drag events
+      span.addEventListener("dragstart", dragStart);
+      span.addEventListener("dragend", dragEnd);
+
+      // Touch events for mobile
+      span.addEventListener("touchstart", touchStart, { passive: false });
+      span.addEventListener("touchmove", touchMove, { passive: false });
+      span.addEventListener("touchend", touchEnd);
+
+      wordBank.appendChild(span);
+    });
+
+    // Create drop zones
+    correctSentence.forEach((_, index) => {
+      const dz = document.createElement("div");
+      dz.className = "drop-zone";
+      dz.dataset.index = index;
+      dz.addEventListener("dragover", dragOver);
+      dz.addEventListener("drop", drop);
+
+      // checkmark span
+      const checkmark = document.createElement("div");
+      checkmark.className = "checkmark";
+      dz.appendChild(checkmark);
+
+      dropZones.appendChild(dz);
+    });
+
+    // Desktop drag handlers
+    function dragStart(e) {
+      draggedWord = e.target;
+      setTimeout(() => {
+        e.target.style.display = "none";
+      }, 0);
+    }
+
+    function dragEnd(e) {
+      e.target.style.display = "inline-block";
+      draggedWord = null;
+    }
+
+    function dragOver(e) {
+      e.preventDefault();
+    }
+
+    function drop(e) {
+      e.preventDefault();
+      if (!draggedWord) return;
+
+      const dz = e.currentTarget;
+      const dropIndex = parseInt(dz.dataset.index);
+      const wordText = draggedWord.textContent;
+
+      if (wordText === correctSentence[dropIndex]) {
+        if (dz.dataset.occupied === "true") {
+          const oldWord = dz.querySelector(".draggable");
+          if (oldWord) {
+            wordBank.appendChild(oldWord);
+            oldWord.style.display = "inline-block";
+          }
+        }
+        dz.appendChild(draggedWord);
+        draggedWord.style.display = "inline-block";
+        dz.dataset.occupied = "true";
+        dz.querySelector(".checkmark").textContent = "✅";
+        checkCompletion();
+      } else {
+        draggedWord.style.display = "inline-block";
+      }
+    }
+
+    // Touch handlers for mobile drag and drop
+    function touchStart(e) {
+      e.preventDefault();
+      if (touchDragging) return; // Ignore if already dragging
+
+      draggedWord = e.target;
+      touchDragging = true;
+
+      // Calculate touch offset inside the element for smooth dragging
+      const rect = draggedWord.getBoundingClientRect();
+      touchOffsetX = e.touches[0].clientX - rect.left;
+      touchOffsetY = e.touches[0].clientY - rect.top;
+
+      // Create clone to follow finger
+      touchClone = draggedWord.cloneNode(true);
+      touchClone.style.position = 'absolute';
+      touchClone.style.pointerEvents = 'none';
+      touchClone.style.opacity = '0.8';
+      touchClone.style.zIndex = '1000';
+      touchClone.style.left = (e.touches[0].pageX - touchOffsetX) + 'px';
+      touchClone.style.top = (e.touches[0].pageY - touchOffsetY) + 'px';
+
+      document.body.appendChild(touchClone);
+
+      draggedWord.style.opacity = '0.4';
+    }
+
+    function touchMove(e) {
+      e.preventDefault();
+      if (!touchDragging) return;
+      touchClone.style.left = (e.touches[0].pageX - touchOffsetX) + 'px';
+      touchClone.style.top = (e.touches[0].pageY - touchOffsetY) + 'px';
+    }
+
+    function touchEnd(e) {
+      e.preventDefault();
+      if (!touchDragging) return;
+
+      // Find element under finger
+      const touch = e.changedTouches[0];
+      const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+
+      // Walk up DOM tree to find drop-zone
+      let dropZone = elem;
+      while (dropZone && !dropZone.classList.contains('drop-zone')) {
+        dropZone = dropZone.parentElement;
+      }
+
+      if (dropZone) {
+        const dropIndex = parseInt(dropZone.dataset.index);
+        const wordText = draggedWord.textContent;
+
+        if (wordText === correctSentence[dropIndex]) {
+          if (dropZone.dataset.occupied === "true") {
+            const oldWord = dropZone.querySelector(".draggable");
+            if (oldWord) {
+              wordBank.appendChild(oldWord);
+              oldWord.style.display = "inline-block";
+            }
+          }
+          dropZone.appendChild(draggedWord);
+          draggedWord.style.display = "inline-block";
+          dropZone.dataset.occupied = "true";
+          dropZone.querySelector(".checkmark").textContent = "✅";
+          checkCompletion();
+        } else {
+          draggedWord.style.display = "inline-block";
+        }
+      } else {
+        // Not dropped on drop zone, return to word bank
+        draggedWord.style.display = "inline-block";
+      }
+
+      // Cleanup clone and reset states
+      if (touchClone && touchClone.parentNode) {
+        touchClone.parentNode.removeChild(touchClone);
+      }
+      draggedWord.style.opacity = '1';
+
+      draggedWord = null;
+      touchDragging = false;
+    }
+
+    // Check if all drop zones are correctly occupied
+    function checkCompletion() {
+      const allZones = dropZones.querySelectorAll(".drop-zone");
+      let allCorrect = true;
+      allZones.forEach(dz => {
+        if (dz.dataset.occupied !== "true") allCorrect = false;
+      });
+      if (allCorrect) {
+        successMessage.style.display = "block";
+      } else {
+        successMessage.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>
