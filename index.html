@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>The Dawn’s First Light - Step 1</title>
+  <style>
+    body {
+      background-color: #0a0f2c;
+      color: #f0e6d2;
+      font-family: 'Georgia', serif;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+    .intro {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+    }
+    .word-block {
+      margin-bottom: 15px;
+    }
+    input[type="text"] {
+      padding: 8px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: none;
+      width: 200px;
+    }
+    .correct {
+      color: #b8f55c;
+      font-weight: bold;
+    }
+    .incorrect {
+      color: #f55c5c;
+    }
+    button {
+      margin-top: 30px;
+      padding: 12px 25px;
+      font-size: 1em;
+      background-color: #444;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌅 The Dawn’s First Light</h1>
+  <div class="intro">
+    Seekers, each scrambled word below must be revealed.  
+    Work together. Once all words are correct, you may reveal the hidden message.
+  </div>
+
+  <div id="words"></div>
+
+  <button id="revealBtn" style="display:none;" onclick="goNext()">Reveal</button>
+
+  <script>
+    const words = [
+      { scrambled: "llew", answer: "Well" },
+      { scrambled: "node", answer: "Done" },
+      { scrambled: "reeskse", answer: "Seekers" },
+      { scrambled: "uory", answer: "Your" },
+      { scrambled: "xten", answer: "Next" },
+      { scrambled: "eulc", answer: "Clue" },
+      { scrambled: "siel", answer: "Lies" },
+      { scrambled: "eerwh", answer: "Where" },
+      { scrambled: "wnkleodgde", answer: "Knowledge" },
+      { scrambled: "tssre", answer: "Rests" },
+      { scrambled: "sepga", answer: "Pages" },
+      { scrambled: "spirewh", answer: "Whisper" },
+      { scrambled: "tescres", answer: "Secrets" },
+      { scrambled: "ni", answer: "In" },
+      { scrambled: "ecneilns", answer: "Silence" },
+    ];
+
+    // Shuffle the words array for random order
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    shuffle(words);
+
+    const container = document.getElementById("words");
+
+    words.forEach((w, index) => {
+      const block = document.createElement("div");
+      block.className = "word-block";
+      block.innerHTML = `
+        <strong>${w.scrambled}</strong>:
+        <input type="text" id="input${index}" onkeyup="checkWord(${index})">
+        <span id="result${index}"></span>
+      `;
+      container.appendChild(block);
+    });
+
+    function checkWord(index) {
+      const userInput = document.getElementById(`input${index}`).value.trim().toLowerCase();
+      const correctAnswer = words[index].answer.toLowerCase();
+      const resultSpan = document.getElementById(`result${index}`);
+
+      if (userInput === correctAnswer) {
+        resultSpan.innerHTML = "✅";
+        resultSpan.className = "correct";
+      } else {
+        resultSpan.innerHTML = "";
+      }
+
+      checkAllCorrect();
+    }
+
+    function checkAllCorrect() {
+      let allCorrect = true;
+      words.forEach((w, index) => {
+        const userInput = document.getElementById(`input${index}`).value.trim().toLowerCase();
+        if (userInput !== w.answer.toLowerCase()) {
+          allCorrect = false;
+        }
+      });
+
+      document.getElementById("revealBtn").style.display = allCorrect ? "inline-block" : "none";
+    }
+
+    function goNext() {
+      window.location.href = "sentence.html";
+    }
+  </script>
+</body>
+</html>
